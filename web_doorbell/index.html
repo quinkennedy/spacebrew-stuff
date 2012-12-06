@@ -61,8 +61,8 @@
         sb.connect();
 
         // listen to the mouse
-      	window.addEventListener("mousedown", onMouseDown);
-      	window.addEventListener("mouseup", onMouseUp);
+      	//window.addEventListener("mousedown", onMouseDown);
+      	//window.addEventListener("mouseup", onMouseUp);
       }
 
       //-------------------------------------------------------
@@ -82,7 +82,7 @@
       function onMouseDown (evt){
       	console.log("Sending message"); 
         sb.send("buttonPress", "boolean", "true");
-        sb.send("randomRange", "range", Math.floor(Math.random()*1024) );
+        sb.send("randomRange", "range", 1023);
       }
       function onMouseUp (evt){
       	console.log("Sending message"); 
@@ -96,6 +96,7 @@
 	<body>
 		<h1>Click to ring the Spacebrew doorbell</h1>
 		<h3 id="numclicks"></h3>
-    <a class="button" id="buttonMsg">Doorbell</a>
+    <input type="button" id="buttonMsg" onclick="onMouseDown()" value="Doorbell" />
+    <!--<a class="button" id="buttonMsg">Doorbell</a>-->
    </body>
 </html>
