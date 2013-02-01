@@ -1,0 +1,99 @@
+<!DOCTYPE HTML>
+<html>
+	<head>
+		<title>Spacebrew Image Viewer</title>
+		<meta charset="utf-8">
+		<link rel="stylesheet" href="css/style.css" type="text/css" media="screen" charset="utf-8" />
+		<!-- basic libraries -->
+        <script type="text/javascript" src="js/jquery/jq.js"></script>
+<script type="text/javascript">
+$(document).ready( function() {
+	setup();
+});
+
+function gup( name ) {
+  name = name.replace(/[\[]/,"\\\[").replace(/[\]]/,"\\\]");
+  var regexS = "[\\?&]"+name+"=([^&#]*)";
+  var regex = new RegExp( regexS );
+  var results = regex.exec( window.location.href );
+  if( results == null )
+    return "";
+  else
+    return results[1];
+}
+
+//-------------------------------------------------------
+var ddl, txt, chk;
+function setup (){
+  var pages = gup('pages');
+  if (pages){
+    var Xs = gup('x');
+    var Ys = gup('y');
+    var Hs = gup('h');
+    var Ws = gup('w');
+    pages = unescape(pages).split(';');
+    Xs = Xs.split(';');
+    Ys = Ys.split(';');
+    Ws = Ws.split(';');
+    Hs = Hs.split(';');
+    
+    for(var len = Math.min(pages.length, Xs.length, Ys.length)-1; len >= 0; len--){
+      var iframe = document.createElement("iframe");
+      iframe.src = pages[len];
+      iframe.style.left = Xs[len] + 'px';
+      iframe.style.top = Ys[len] + 'px';
+      iframe.style.width = Ws[len] + 'px';
+      iframe.style.height = Hs[len] + 'px';
+      document.body.appendChild(iframe);
+    }
+  }
+};
+
+function getLink(){
+  var href = window.location.href;
+  var qsIndex = href.indexOf("?");
+  if (qsIndex >= 0){
+    href = href.substring(0,qsIndex);
+  }
+  var elems = document.getElementsByTagName("iframe");
+  var pages = [];
+  var Xs = [];
+  var Ys = [];
+  var Ws = [];
+  var Hs = [];
+  var tmp;
+  for(var i = elems.length - 1; i >= 0; i--){
+    pages.push(elems[i].src);
+    tmp = elems[i].style.left;
+    if (tmp && tmp.length > 2){
+      Xs.push(tmp.substring(0, tmp.length - 2));
+    } else {
+      Xs.push(0);
+    }
+    tmp = elems[i].style.top;
+    if (tmp && tmp.length > 2){
+      Ys.push(tmp.substring(0, tmp.length - 2));
+    } else {
+      Ys.push(0);
+    }
+    tmp = elems[i].style.width;
+    if (tmp && tmp.length > 2){
+      Ws.push(tmp.substring(0, tmp.length - 2));
+    } else {
+      Ws.push(0);
+    }
+    tmp = elems[i].style.height;
+    if (tmp && tmp.length > 2){
+      Hs.push(tmp.substring(0, tmp.length - 2));
+    } else {
+      Hs.push(0);
+    }
+  }
+  return href + "?pages=" + escape(pages.join(';')) + "&x=" + Xs.join(';') + "&y=" + Ys.join(';') + "&w=" + Ws.join(';') + "&h=" + Hs.join(';');
+};
+
+</script>
+	</head>
+	<body>
+  </body>
+</html>

@@ -1,0 +1,141 @@
+<!DOCTYPE HTML>
+<html>
+	<head>
+		<title>Spacebrew Image Viewer</title>
+		<meta charset="utf-8">
+		<link rel="stylesheet" href="css/style.css" type="text/css" media="screen" charset="utf-8" />
+		<!-- basic libraries -->
+        <script type="text/javascript" src="js/jquery/jq.js"></script>
+<script type="text/javascript">
+$(document).ready( function() {
+	setup();
+});
+
+function gup( name ) {
+  name = name.replace(/[\[]/,"\\\[").replace(/[\]]/,"\\\]");
+  var regexS = "[\\?&]"+name+"=([^&#]*)";
+  var regex = new RegExp( regexS );
+  var results = regex.exec( window.location.href );
+  if( results == null )
+    return "";
+  else
+    return results[1];
+}
+
+var name = gup('name') || window.location.href; 
+var server = gup('server') || 'localhost';
+
+
+var index = 0;
+
+var myConfig = {
+"config": {
+ "name": name,
+ "description": "A simple image viewer",
+ "publish": {
+   "messages": [
+     {
+       "name": "image",
+       "type": "url",
+       "default": "http://thissongissick.com/blog/wp-content/uploads/2011/05/Hall-and-Oates-Dj-Kue-Remix.jpg"
+     },
+     {
+       "name": "cover",
+       "type": "boolean",
+       "default": true
+     }
+   ]
+ },
+ "subscribe": {
+   "messages": [
+   ]
+ }
+}
+};
+
+var ws;
+function setupWS(){
+  ws = new WebSocket("ws://"+server+":9000");
+    ws.onopen = function() {
+        console.log("WebSockets connection opened");
+        var nameMsg = { "name": [
+        	{"name": name}
+       	]};
+   		ws.send(JSON.stringify(nameMsg));
+
+      // send my config
+      ws.send(JSON.stringify(myConfig));
+      if (gup('ping')){
+        setInterval(ws.send(''), 60*1000);
+      }
+    }
+    ws.onmessage = function(e) {
+      var data = JSON.parse(e.data);
+
+        var currName = data.message.name;
+        var currType = data.message.type;
+        var currValue = data.message.value;
+
+        if (currType == "url"){
+          $("body").css("background-image", currValue);
+          sendImage(currValue);
+        } else if (currType == "boolean"){
+          $("body").css("background-size", (currValue.toLowerCase() == 'true' ? "cover" : "contain"));
+        }
+    }
+    ws.onclose = function() {
+        console.log("WebSockets connection closed");
+    }
+  };
+
+
+//-------------------------------------------------------
+var ddl, txt, chk;
+function setup (){
+  ddl = document.getElementById("ddlImg");
+  txt = document.getElementById("txtImg");
+  document.getElementById("btnImg").addEventListener('click',function(e){
+    if (e){e.preventDefault();} sendImg();});
+  ddl.onchange = function(){
+    txt.value = ddl.options[ddl.selectedIndex].value;
+    sendImg();
+  }
+  txt.onchange = sendImg;
+  chk = document.getElementById("chkCover");
+  chk.addEventListener('click', sendCover);
+  setupWS();
+}
+
+function sendCover(){
+  sendMessage('boolean', 'cover', chk.checked);
+};
+
+function sendImg(){
+  sendMessage('url', 'image', txt.value);
+};
+
+function sendMessage(type, rname, value){
+  console.log("sending");
+  ws.send(JSON.stringify({
+    message:{
+      clientName:name,
+      name:rname,
+      type:type,
+      value:value
+    }
+  }));
+  return false;
+};
+
+</script>
+	</head>
+	<body>
+    <select id="ddlImg">
+      <option value="http://thissongissick.com/blog/wp-content/uploads/2011/05/Hall-and-Oates-Dj-Kue-Remix.jpg">1</option>
+      <option value="http://www.twilio.com/blog/wp-content/uploads/2011/12/4771-hall-2.jpg">2</option>
+    </select>
+    <input type="text" id="txtImg" />
+    <input type="button" id="btnImg" />
+    cover: <input type="checkbox" id="chkCover" />
+  </body>
+</html>
