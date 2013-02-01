@@ -49,6 +49,45 @@ function setup (){
   }
 };
 
+function add(path){
+  var iframe = document.createElement("iframe");
+  document.body.appendChild(iframe);
+  console.log("added iframe at index: " + (document.getElementsByTagName("iframe").length - 1));
+};
+
+function getIndex(index){
+  var iframes = document.getElementsByTagName("iframe");
+  if (iframes.length <= index){
+    console.log("there are only " + iframes.length + " iframe(s)");
+    return undefined;
+  }
+  return iframes[index];
+};
+
+function updateX(index, int){
+  var iframe = getIndex(index);
+  if (!iframe){ return; }
+  iframe.style.left = int+'px';
+};
+
+function updateY(index, int){
+  var iframe = getIndex(index);
+  if (!iframe){ return; }
+  iframe.style.top = int+'px';
+};
+
+function updateW(index, int){
+  var iframe = getIndex(index);
+  if (!iframe){ return; }
+  iframe.style.width = int+'px';
+};
+
+function updateH(index, int){
+  var iframe = getIndex(index);
+  if (!iframe){ return; }
+  iframe.style.height = int+'px';
+};
+
 function getLink(){
   var href = window.location.href;
   var qsIndex = href.indexOf("?");
