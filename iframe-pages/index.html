@@ -51,6 +51,7 @@ function setup (){
 
 function add(path){
   var iframe = document.createElement("iframe");
+  iframe.src = path;
   document.body.appendChild(iframe);
   console.log("added iframe at index: " + (document.getElementsByTagName("iframe").length - 1));
 };
