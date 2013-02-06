@@ -108,7 +108,7 @@ function addText(from, text){
     if ('A' <= upper && upper <= 'Z'){
       content.innerHTML = "<div class='from'>"+from+":</div><span class='drop "+upper+Math.floor(Math.random()*13)+"'>"+upper+"</span>"+text.substring(1); 
     } else {
-      content.innerHTML = "div class='from'>"+from+":</div>"+text;
+      content.innerHTML = "<div class='from'>"+from+":</div>"+text;
     }
   }
   if (text.toUpperCase)
