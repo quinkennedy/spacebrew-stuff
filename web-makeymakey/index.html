@@ -1,0 +1,167 @@
+<!DOCTYPE HTML>
+<html>
+	<head>
+		<title>Spacebrew Key to Bang</title>
+		<meta charset="utf-8">
+		<link rel="stylesheet" href="css/reset.css" type="text/css" media="screen" charset="utf-8" />
+		<link rel="stylesheet" href="css/style.css" type="text/css" media="screen" charset="utf-8" />
+		<!-- basic libraries -->
+        <script type="text/javascript" src="js/jquery/jq.js"></script>
+<script type="text/javascript">
+$(document).ready( function() {
+  setup();
+	setupws();
+});
+
+function gup( name ) {
+  name = name.replace(/[\[]/,"\\\[").replace(/[\]]/,"\\\]");
+  var regexS = "[\\?&]"+name+"=([^&#]*)";
+  var regex = new RegExp( regexS );
+  var results = regex.exec( window.location.href );
+  if( results == null )
+    return "";
+  else
+    return results[1];
+}
+
+var index = 0;
+
+var name = gup('name') || "makeymakey_to_bang " + Math.floor(Math.random()*1000);
+var server = gup('server') || 'localhost';
+var pubs = ["W","A","S","D","F","G","H","J","[SPACE]","[UP]","[DOWN]","[RIGHT]","[LEFT]","[MOUSE_LEFT]","[MOUSE_RIGHT]"];
+
+console.log(name);
+
+var myConfig = {
+"config": {
+ "name": name,
+ "description": "This turns makeymakey inputs into boolean messages.",
+ "publish": {
+   "messages": []
+ },
+ "subscribe": {
+   "messages": []
+ }
+}
+};
+var isKeyDown = {};
+
+var addTo = myConfig.config.publish.messages;
+for(var i = 0; i < pubs.length; i++){
+  addTo.push({name:pubs[i], type:'boolean', default:'true'});
+  isKeyDown[pubs[i]] = false;
+}
+
+var ws;
+var setupws = function(){
+  ws = new WebSocket("ws://"+server+":9000");
+    ws.onopen = function() {
+        console.log("WebSockets connection opened");
+        document.getElementById("output").innerHTML = "Type to send bangs!";
+        var nameMsg = { "name": [
+        	{"name": name}
+       	]};
+   		ws.send(JSON.stringify(nameMsg));
+
+      // send my config
+      ws.send(JSON.stringify(myConfig));
+    }
+    ws.onmessage = function(e) {
+        console.log("Got WebSockets message: " + e.data);
+    }
+    ws.onclose = function() {
+        console.log("WebSockets connection closed");
+        document.getElementById("output").innerHTML = "no longer connected to spacebrew :(";
+    }
+};
+
+//-------------------------------------------------------
+function setup (){
+	window.onkeydown = onKeyDown;
+	window.onkeyup = onKeyUp;
+	window.onmousedown = onMouseDown;
+	window.onmouseup = onMouseUp;
+};
+
+function incrementIndex() {
+    index += 1;
+    //console.log(index);
+};
+
+function sendMessage(c, val){
+    //don't send a repeat message
+  if (!isKeyDown.hasOwnProperty(c) || isKeyDown[c] == val){
+    return;
+  }
+  isKeyDown[c] = val;
+  var message = {message:
+       {
+           clientName:name,
+           name:c,
+           type:"boolean",
+           value:val.toString()
+       }
+    };
+
+  //console.log(message);
+  ws.send(JSON.stringify(message));
+
+  incrementIndex();
+  updateOutput();
+};
+
+function updateOutput(){
+  document.getElementById("output").innerHTML = "sent " + index + " bangs";
+}
+
+//-------------------------------------------------------
+function onKeyDown(evt){
+  sendMessage(getKeyIdent(evt), true);
+}
+
+function onKeyUp(evt){
+  sendMessage(getKeyIdent(evt), false);
+}
+
+function onMouseDown(evt){
+  sendMessage(getMouseButtonIdent(evt), true);
+}
+
+function onMouseUp(evt){
+  sendMessage(getMouseButtonIdent(evt), false);
+}
+
+function getMouseButtonIdent(evt){
+  if (evt.which == 1){
+    return "[MOUSE_LEFT]";
+  } else if (evt.which == 3){
+    return "[MOUSE_RIGHT]";
+  } else {
+    return undefined;
+  }
+}
+
+function getKeyIdent(evt){
+    switch (evt.keyCode){
+        case 38:
+            return "[UP]";
+        case 40:
+            return "[DOWN]";
+        case 37:
+            return "[LEFT]";
+        case 39:
+            return "[RIGHT]";
+        case 32:
+            return "[SPACE]";
+    }
+    return String.fromCharCode(evt.keyCode);
+}
+
+</script>
+		<!-- MAIN -->
+	</head>
+	<body>
+		<h3 id="output">Not Connected to Spacebrew :(</h3>
+   </body>
+</html>
+
