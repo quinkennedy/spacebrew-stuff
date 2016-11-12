@@ -6,10 +6,11 @@
 		<link rel="stylesheet" href="css/reset.css" type="text/css" media="screen" charset="utf-8" />
 		<link rel="stylesheet" href="css/style.css" type="text/css" media="screen" charset="utf-8" />
 		<!-- basic libraries -->
-        <script type="text/javascript" src="js/jquery/jq.js"></script>
+    <script type="text/javascript" src="../jslib/jq-1.7.min.js"></script>
+    <script type="text/javascript" src="../jslib/sb-1.4.1.min.js"></script>
 <script type="text/javascript">
 $(document).ready( function() {
-	setupws();
+	setupsb();
 });
 
 function gup( name ) {
@@ -23,87 +24,48 @@ function gup( name ) {
     return results[1];
 }
 
-var index = 0;
-
-var name = gup('name') || "metro"; 
-var server = gup('server') || 'localhost';
 var delay = parseInt(gup('delay'));
 var currInterval;
 
-console.log(name);
+var sb;
+var setupsb = function(){
+  sb = new Spacebrew.Client(undefined,
+                            'metro',
+                            'This outputs a boolean every so often.',
+                            {debug: true});
+  sb.addPublish('bang', 'boolean', 'false');
+  sb.addSubscribe('delay', 'number');
+  sb.addSubscribe('sync', 'boolean');
 
-var myConfig = {
-"config": {
- "name": name,
- "description": "This outputs a boolean every so often.",
- "publish": {
-   "messages": [
-    {
-      "name": "bang",
-      "type": "boolean",
-      "default": true
+  sb.onBooleanMessage = function onBoolean(name, value){
+    setDelay(delay);
+    sendBang();
+  };
+  sb.onCustomMessage = function onCustom(name, value, type){
+    var v = parseInt(currValue);
+    if (v == v) {
+      delay = v;
+      setDelay(delay);
     }
-   ]
- },
- "subscribe": {
-   "messages": [
-     {
-       "name": "delay",
-       "type": "number"
-     },
-     {
-      "name": "sync",
-      "type": "boolean"
-     }
-   ]
- }
-}
-};
+  };
 
-var ws;
-var setupws = function(){
-  ws = new WebSocket("ws://"+server+":9000");
-    ws.onopen = function() {
-        console.log("WebSockets connection opened");
-        if (delay == delay){
-          setDelay(delay);
-        } else {
-          //NaN
-          document.getElementById("output").innerHTML = "Send a number message to set metro delay.";
-        }
-        var nameMsg = { "name": [
-        	{"name": name}
-       	]};
-   		ws.send(JSON.stringify(nameMsg));
-
-      // send my config
-      ws.send(JSON.stringify(myConfig));
+  sb.onOpen = function onOpen(){
+    console.log("WebSockets connection opened");
+    if (delay == delay){
+      setDelay(delay);
+    } else {
+      //NaN
+      document.getElementById("output").innerHTML = 
+        "Send a number message to set metro delay.";
     }
-    ws.onmessage = function(e) {
-        console.log("Got WebSockets message: " + e.data);
-        
-
-        var currName = JSON.parse(e.data).message.name;
-        var currType = JSON.parse(e.data).message.type;
-        var currValue = JSON.parse(e.data).message.value;
-        
-        // if it’s a text
-        if (currName == "delay") {
-          console.log("received number");
-          var v = parseInt(currValue);
-          if (v == v) {
-            delay = v;
-            setDelay(delay);
-          }
-        } else if (currName == "sync"){
-          setDelay(delay);
-          sendBang();
-        }
-    }
-    ws.onclose = function() {
-        console.log("WebSockets connection closed");
-        document.getElementById("output").innerHTML = "no longer connected to spacebrew :(";
-    }
+  };
+  sb.onClose = function onClose(){
+    console.log("WebSockets connection closed");
+    document.getElementById("output").innerHTML = 
+      "no longer connected to spacebrew :(";
+  };
+  
+  sb.connect();
 };
 
 function setDelay(d){
@@ -113,17 +75,7 @@ function setDelay(d){
 }
 
 function sendBang(){
-  var message = {message:
-       {
-           clientName:name,
-           name:"bang",
-           type:"boolean",
-           value:"true"
-       }
-    };
-
-  //console.log(message);
-  ws.send(JSON.stringify(message));
+  sb.send('bang', 'boolean', 'true');
 };
 
 </script>

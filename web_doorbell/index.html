@@ -6,9 +6,9 @@
     <link rel="stylesheet" href="css/reset.css" type="text/css" media="screen" charset="utf-8" />
     <link rel="stylesheet" href="css/style.css" type="text/css" media="screen" charset="utf-8" />
     <!-- basic libraries -->
-    <script type="text/javascript" src="js/jquery/jq.js"></script>
+    <script type="text/javascript" src="../jslib/jq-1.7.min.js"></script>
     <!-- Spacebrew libraries -->
-    <script type="text/javascript" src="js/sb.js"></script>
+    <script type="text/javascript" src="../jslib/sb-1.4.1.min.js"></script>
     <script type="text/javascript">
 
       
@@ -45,7 +45,10 @@
       //-------------------------------------------------------
       function setup (){
         // setup spacebrew
-        sb = new Spacebrew.Client();
+        sb = new Spacebrew.Client(undefined,
+                                  undefined,
+                                  undefined,
+                                  {debug:true});
         sb.description = "This is an example client which has a button you can push to send a message. It also listens for range and string input which will change the background color and text on the webpage respectively.";
 
         sb.addPublish( "buttonPress", "boolean", "false" );

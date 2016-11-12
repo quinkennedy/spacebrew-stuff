@@ -5,91 +5,41 @@
 		<meta charset="utf-8">
 		<link rel="stylesheet" href="css/style.css" type="text/css" media="screen" charset="utf-8" />
 		<!-- basic libraries -->
-        <script type="text/javascript" src="js/jquery/jq.js"></script>
+    <script type="text/javascript" src="../jslib/jq-1.7.min.js"></script>
+    <script type="text/javascript" src="../jslib/sb-1.4.1.min.js"></script>
 <script type="text/javascript">
 $(document).ready( function() {
 	setup();
 });
 
-function gup( name ) {
-  name = name.replace(/[\[]/,"\\\[").replace(/[\]]/,"\\\]");
-  var regexS = "[\\?&]"+name+"=([^&#]*)";
-  var regex = new RegExp( regexS );
-  var results = regex.exec( window.location.href );
-  if( results == null )
-    return "";
-  else
-    return results[1];
-}
-
-var name = gup('name') || window.location.href; 
-var server = gup('server') || 'localhost';
-
-
-var index = 0;
-
-var myConfig = {
-"config": {
- "name": name,
- "description": "A simple and whimsical chat client",
- "publish": {
-   "messages": [
-     {
-       "name": "send",
-       "type": "string",
-       "default": "hello"
-     }
-   ]
- },
- "subscribe": {
-   "messages": [
-     {
-       "name": "receive",
-       "type": "string"
-     }
-   ]
- }
-}
-};
-
-var ws;
-function setupWS(){
-  ws = new WebSocket("ws://"+server+":9000");
-    ws.onopen = function() {
-        console.log("WebSockets connection opened");
-        var nameMsg = { "name": [
-        	{"name": name}
-       	]};
-   		ws.send(JSON.stringify(nameMsg));
-
-      // send my config
-      ws.send(JSON.stringify(myConfig));
-      if (gup('ping')){
-        setInterval(ws.send(''), 60*1000);
-      }
-    }
-    ws.onmessage = function(e) {
-      var data = JSON.parse(e.data);
-
-        var currName = data.message.name;
-        var currType = data.message.type;
-        var currValue = data.message.value;
-
-        if (currType == "string") {
-          addText("them", currValue);
-        }
-    }
-    ws.onclose = function() {
-        console.log("WebSockets connection closed");
-    }
-  };
-
+var sb;
 
 //-------------------------------------------------------
 function setup (){
 
   document.getElementById("btnSend").addEventListener('click',sendMessage);
-  setupWS();
+  setupSB();
+}
+
+function setupSB(){
+  sb = new Spacebrew.Client(undefined, 
+                                undefined, 
+                                "A simple and whimsical chat client", 
+                                {debug: true});
+  sb.addPublish("send", "string", "hello");
+  sb.addSubscribe("receive", "string");
+  sb.onStringMessage = 
+    function onString(name, value){
+      addText("them", value);
+    };
+  sb.onOpen = function onOpen(){
+    console.log("WebSockets connection opened");
+  };
+  sb.onClose = function onClose(){
+    console.log("WebSockets connection closed");
+  };
+  
+  sb.connect();
 }
 
 function addText(from, text){
@@ -122,16 +72,10 @@ function addText(from, text){
 function sendMessage(e){
   e = e || window.event;
   if (e)e.preventDefault();
-  addText("me", document.getElementById("txtSend").value);
+  var toSend = document.getElementById("txtSend").value;
+  addText("me", toSend);
   console.log("sending");
-  ws.send(JSON.stringify({
-    message:{
-      clientName:name,
-      name:"send",
-      type:"string",
-      value:document.getElementById("txtSend").value
-    }
-  }));
+  sb.send("send", "string", toSend);
   return false;
 };
 

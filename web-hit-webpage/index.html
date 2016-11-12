@@ -6,10 +6,12 @@
 		<link rel="stylesheet" href="css/reset.css" type="text/css" media="screen" charset="utf-8" />
 		<link rel="stylesheet" href="css/style.css" type="text/css" media="screen" charset="utf-8" />
 		<!-- basic libraries -->
-        <script type="text/javascript" src="js/jq.js"></script>
+    <script type="text/javascript" src="../jslib/jq-1.7.min.js"></script>
+    <script type="text/javascript" src="../jslib/sb-1.4.1.min.js"></script>
 <script type="text/javascript">
+
 $(document).ready( function() {
-	setupws();
+	setup();
 });
 
 function gup( name ) {
@@ -25,73 +27,34 @@ function gup( name ) {
 
 var index = 0;
 
-var name = gup('name') || "nerf_stampede"; 
-var server = gup('server') || 'localhost';
 var address = unescape(gup('address'));//the address of the website you want to hit
 
-console.log(name);
+var sb;
+var setup = function(){
+  sb = new Spacebrew.Client(undefined,
+                            undefined,
+                            "This is a client which goes to some wepage when it receives a bang.",
+                            {debug: true});
+  sb.addSubscribe("Bang!", "boolean");
+  sb.onBooleanMessage = function onBoolean(name, value){
+    $.get(address);
+    incrementIndex();
+    document.getElementById("output").innerHTML =
+      address+" has been visited "+index+" times";
+  };
+    
+  sb.onOpen = function onOpen(){
+    console.log("WebSockets connection opened");
+    document.getElementById("output").innerHTML = 
+      "send a bang to visit " + address;
+  };
+  sb.onClose = function onClose(){
+    console.log("WebSockets connection closed");
+    document.getElementById("output").innerHTML = 
+      "no longer connected to spacebrew :(";
+  };
 
-var myConfig = {
-  "config": {
-   "name": name,
-   "description": "This is a client which goes to some wepage when it receives a bang.",
-   "publish": {
-   },
-   "subscribe": {
-     "messages": [
-       {
-         "name": "Bang!",
-         "type": "boolean"
-       }
-     ]
-   }
-  }
-};
-
-var ws;
-var setupws = function(){
-  ws = new WebSocket("ws://"+server+":9000");
-    ws.onopen = function() {
-        console.log("WebSockets connection opened");
-        document.getElementById("output").innerHTML = "send a bang to visit " + address;
-        var nameMsg = { "name": [
-        	{"name": name}
-       	]};
-   		ws.send(JSON.stringify(nameMsg));
-
-      // send my config
-      ws.send(JSON.stringify(myConfig));
-    }
-    ws.onmessage = function(e) {
-      console.log("Got WebSockets message: " + e.data);
-      
-
-      var currName = JSON.parse(e.data).message.name;
-      var currType = JSON.parse(e.data).message.type;
-      //currName = "partyMode";
-      var currValue = JSON.parse(e.data).message.value;
-      
-      if (currType == "boolean") {
-        currValue = Boolean(currValue);
-        console.log("Cast to boolean");
-      }
-      //currValue = "BIG RED BUTTON";
-      console.log(currName+" : "+currValue);
-
-
-      // if it's a partyMode
-      if (currName == "Bang!") {
-        console.log("received boolean");
-        $.get(address);
-
-        incrementIndex();
-        document.getElementById("output").innerHTML=address+" has been visited "+index+" times";
-      }
-    }
-    ws.onclose = function() {
-        console.log("WebSockets connection closed");
-        document.getElementById("output").innerHTML = "no longer connected to spacebrew :(";
-    }
+  sb.connect();
 };
 
 function incrementIndex() {

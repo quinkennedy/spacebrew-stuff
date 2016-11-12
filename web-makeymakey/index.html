@@ -6,11 +6,12 @@
 		<link rel="stylesheet" href="css/reset.css" type="text/css" media="screen" charset="utf-8" />
 		<link rel="stylesheet" href="css/style.css" type="text/css" media="screen" charset="utf-8" />
 		<!-- basic libraries -->
-        <script type="text/javascript" src="js/jquery/jq.js"></script>
+    <script type="text/javascript" src="../jslib/jq-1.7.min.js"></script>
+    <script type="text/javascript" src="../jslib/sb-1.4.1.min.js"></script>
 <script type="text/javascript">
 $(document).ready( function() {
   setup();
-	setupws();
+	setupsb();
 });
 
 function gup( name ) {
@@ -25,54 +26,37 @@ function gup( name ) {
 }
 
 var index = 0;
-
-var name = gup('name') || "makeymakey_to_bang " + Math.floor(Math.random()*1000);
-var server = gup('server') || 'localhost';
 var pubs = ["W","A","S","D","F","G","H","J","[SPACE]","[UP]","[DOWN]","[RIGHT]","[LEFT]","[MOUSE_LEFT]","[MOUSE_RIGHT]"];
-
-console.log(name);
-
-var myConfig = {
-"config": {
- "name": name,
- "description": "This turns makeymakey inputs into boolean messages.",
- "publish": {
-   "messages": []
- },
- "subscribe": {
-   "messages": []
- }
-}
-};
 var isKeyDown = {};
 
-var addTo = myConfig.config.publish.messages;
-for(var i = 0; i < pubs.length; i++){
-  addTo.push({name:pubs[i], type:'boolean', default:'true'});
-  isKeyDown[pubs[i]] = false;
+function addPublishers(){
+  for(var i = 0; i < pubs.length; i++){
+    sb.addPublish(pubs[i], 'boolean', 'false');
+    isKeyDown[pubs[i]] = false;
+  }
 }
 
-var ws;
-var setupws = function(){
-  ws = new WebSocket("ws://"+server+":9000");
-    ws.onopen = function() {
-        console.log("WebSockets connection opened");
-        document.getElementById("output").innerHTML = "Type to send bangs!";
-        var nameMsg = { "name": [
-        	{"name": name}
-       	]};
-   		ws.send(JSON.stringify(nameMsg));
+var sb;
+function setupsb(){
+  sb = new Spacebrew.Client(undefined,
+                            "makeymakey_to_bang " + 
+                              Math.floor(Math.random() * 1000),
+                            "This turns makeymakey inputs into boolean messages.",
+                            {debug: true});
+  addPublishers();
 
-      // send my config
-      ws.send(JSON.stringify(myConfig));
-    }
-    ws.onmessage = function(e) {
-        console.log("Got WebSockets message: " + e.data);
-    }
-    ws.onclose = function() {
-        console.log("WebSockets connection closed");
-        document.getElementById("output").innerHTML = "no longer connected to spacebrew :(";
-    }
+  sb.onOpen = function onOpen(){
+    console.log("WebSockets connection opened");
+    document.getElementById("output").innerHTML = 
+      "Type to send bangs!";
+  };
+  sb.onClose = function onClose(){
+    console.log("WebSockets connection closed");
+    document.getElementById("output").innerHTML = 
+      "no longer connected to spacebrew :(";
+  };
+
+  sb.connect();
 };
 
 //-------------------------------------------------------
@@ -94,17 +78,7 @@ function sendMessage(c, val){
     return;
   }
   isKeyDown[c] = val;
-  var message = {message:
-       {
-           clientName:name,
-           name:c,
-           type:"boolean",
-           value:val.toString()
-       }
-    };
-
-  //console.log(message);
-  ws.send(JSON.stringify(message));
+  sb.send(c, 'boolean', val.toString());
 
   incrementIndex();
   updateOutput();

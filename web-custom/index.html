@@ -4,10 +4,11 @@
 		<title>Spacebrew Custom</title>
 		<meta charset="utf-8">
 		<!-- basic libraries -->
-        <script type="text/javascript" src="js/jquery/jq.js"></script>
+    <script type="text/javascript" src="../jslib/jq-1.7.min.js"></script>
+    <script type="text/javascript" src="../jslib/sb-1.4.1.min.js"></script>
 <script type="text/javascript">
 $(document).ready( function() {
-	setupws();
+	setupsb();
 });
 
 function gup( name, defaultValue ) {
@@ -53,94 +54,93 @@ function strip(s){
   return s.replace(/(^\s*)|(\s*$)/gi,'');
 }
 
-function populateConfig(){
+function populatePubSubs(){
+}
+
+function populatePubSubs(){
   var looping = [{type:'string',publish:stringOutputs, subscribe:stringInputs},
                   {type:'boolean',publish:booleanOutputs, subscribe:booleanInputs},
                   {type:'range',publish:rangeOutputs, subscribe:rangeInputs}];
   var currLooping;
-  var types = ['subscribe','publish'];
+  var types = [{key:'subscribe', func:'addSubscribe'},
+               {key:'publish', func:'addPublish'}];
   var currType;
   for(var i = 0; i < looping.length; i++){
     for(var j = 0; j < types.length; j++){
       currType = types[j];
-      if (looping[i][currType]){
-        currLooping = looping[i][currType].split(',').map(strip);
+      if (looping[i][currType.key]){
+        currLooping = looping[i][currType.key].split(',').map(strip);
         for(var k = 0; k < currLooping.length; k++){
-          myConfig.config[currType].messages.push({name:currLooping[k],type:looping[i].type});
+          sb[currType.func](currLooping[k], looping[i].type);
         }
       }
     }
   }
 };
-populateConfig();
 
-var ws;
-var setupws = function(){
-  ws = new WebSocket("ws://"+server+":9000");
-    ws.onopen = function() {
-        console.log("WebSockets connection opened");
-        display( 
-        document.getElementById("introText").text);
-        try{
-          init();
-        } catch(e){
-          console.log(e);
-        }
-        var nameMsg = { "name": [
-        	{"name": name}
-       	]};
-   		ws.send(JSON.stringify(nameMsg));
+var sb;
+function setupsb(){
+  try{
+    init();
+  } catch(e){
+    console.log(e);
+  }
+  sb = new Spacebrew.Client(undefined, 
+                            undefined, 
+                            undefined,
+                            {debug: true});
+  populatePubSubs();
+  function handleOutput(output){
+    if (output){
+      if (output.string && stringOutputs){
+        sb.send(stringOutputs.split(',')[0], 'string', output.string);
+      }
+      if (output.range && rangeOutputs){
+        sb.send(rangeOutputs.split(',')[0], 'range', output.range);
+      }
+      if (output.boolean && booleanOutputs){
+        sb.send(booleanOutputs.split(',')[0], 'boolean', output.boolean);
+      }
+    }
+  }
+  sb.onBooleanMessage = function(name, value){
+    try{
+      var output = onBoolean(value, name);
+      handleOutput(output);
+    } catch (e){
+      console.log(e);
+    }
+    previousBoolean = value;
+  };
+  sb.onStringMessage = function(name, value){
+    try{
+      var output = onString(value, name);
+      handleOutput(output);
+    } catch (e){
+      console.log(e);
+    }
+    previousString = value;
+  };
+  sb.onRangeMessage = function(name, value){
+    try{
+      var output = onRange(value, name);
+      handleOutput(output);
+    } catch (e){
+      console.log(e);
+    }
+    previousRange = value;
+  };
 
-      // send my config
-      ws.send(JSON.stringify(myConfig));
-    }
-    ws.onmessage = function(e) {
-        
-        var currName = JSON.parse(e.data).message.name;
-        var currType = JSON.parse(e.data).message.type;
-        var currValue = JSON.parse(e.data).message.value;
-        var output;
-        
-        if (currType == "boolean") {
-          currValue = Boolean(currValue);
-          try{
-            output = onBoolean(currValue, currName);
-          } catch(e){
-            console.log(e);
-          }
-          prevBoolean = currValue;
-        } else if (currType == "string"){
-          try{
-            output = onString(currValue, currName);
-          } catch(e){
-            console.log(e);
-          }
-          prevString = currValue;
-        } else if (currType == "range"){
-          try{
-            output = onRange(currValue, currName);
-          } catch(e){
-            console.log(e);
-          }
-          prevRange = currValue;
-        }
-        if (output){
-          if (output.string && stringOutputs){
-            sendMessage(stringOutputs.split(',')[0], output.string, 'string');
-          }
-          if (output.range && rangeOutputs){
-            sendMessage(rangeOutputs.split(',')[0], output.range,'range');
-          }
-          if (output.boolean && booleanOutputs){
-            sendMessage(booleanOutputs.split(',')[0], output.boolean, 'boolean');
-          }
-        }
-    }
-    ws.onclose = function() {
-        console.log("WebSockets connection closed");
-        display("no longer connected to spacebrew :(");
-    }
-};
+  sb.onOpen = function onOpen(){
+    console.log("WebSockets connection opened");
+    display(document.getElementById("introText").text);
+  };
+  sb.onClose = function onClose(){
+    console.log("WebSockets connection closed");
+  };
+
+  sb.connect();
+}
 
 function getLink(){
   var href = window.location.href;
