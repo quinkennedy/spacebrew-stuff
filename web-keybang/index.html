@@ -48,9 +48,10 @@ function addPublishers(){
 var sb;
 function setupsb(){
   sb = new Spacebrew.Client(undefined,
-                            "key-to-bang",
+                            "key-to-bang " + Math.floor(Math.random() * 1000),
                             "This turns keystrokes into boolean messages.",
                             {debug: true});
+  window.document.title = sb._name;
   addPublishers();
   sb.addSubscribe("text", "string");
 

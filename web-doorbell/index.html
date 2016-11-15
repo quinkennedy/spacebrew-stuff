@@ -46,9 +46,10 @@
       function setup (){
         // setup spacebrew
         sb = new Spacebrew.Client(undefined,
-                                  undefined,
+                                  "doorbell " + Math.floor(Math.random() + 1000),
                                   undefined,
                                   {debug:true});
+        window.document.title = sb._name;
         sb.description = "This is an example client which has a button you can push to send a message. It also listens for range and string input which will change the background color and text on the webpage respectively.";
 
         sb.addPublish( "buttonPress", "boolean", "false" );

@@ -43,6 +43,7 @@ function setupsb(){
                               Math.floor(Math.random() * 1000),
                             "This turns makeymakey inputs into boolean messages.",
                             {debug: true});
+  window.document.title = sb._name;
   addPublishers();
 
   sb.onOpen = function onOpen(){

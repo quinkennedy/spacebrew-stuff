@@ -13,37 +13,13 @@ $(document).ready( function() {
 	setup();
 });
 
-
-var myConfig = {
-"config": {
- "name": name,
- "description": "This only passes true values.",
- "publish": {
-   "messages": [
-    {
-      "name": "true",
-      "type": "boolean",
-      "default": true
-    }
-   ]
- },
- "subscribe": {
-   "messages": [
-     {
-       "name": "value",
-       "type": "boolean"
-     }
-   ]
- }
-}
-};
-
 var sb;
 var setup = function(){
   sb = new Spacebrew.Client(undefined,
-                            undefined,
+                            "filter " + Math.floor(Math.random() * 1000),
                             "This only passes true values",
                             {debug: true});
+  window.document.title = sb._name;
   sb.addPublish("true", "boolean", "true");
   sb.addSubscribe("value", "boolean");
   sb.onBooleanMessage = function onBoolean(name, value){

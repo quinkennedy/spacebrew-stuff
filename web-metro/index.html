@@ -30,9 +30,10 @@ var currInterval;
 var sb;
 var setupsb = function(){
   sb = new Spacebrew.Client(undefined,
-                            'metro',
+                            'metronome ' + Math.floor(Math.random() * 1000),
                             'This outputs a boolean every so often.',
                             {debug: true});
+  window.document.title = sb._name;
   sb.addPublish('bang', 'boolean', 'false');
   sb.addSubscribe('delay', 'number');
   sb.addSubscribe('sync', 'boolean');

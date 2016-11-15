@@ -24,8 +24,6 @@ function gup( name, defaultValue ) {
 
 var index = 0;
 
-var name = gup('name') || "custom"; 
-var server = gup('server') || 'localhost';
 var stringInputs = unescape(gup('stringIns', "string"));
 var booleanInputs = unescape(gup('booleanIns', "boolean"));
 var rangeInputs = unescape(gup('rangeIns', "range"));
@@ -37,24 +35,8 @@ var data = {};
 
 console.log(name);
 
-var myConfig = {
-"config": {
- "name": name,
- "description": "This only passes true values.",
- "publish": {
-   "messages": []
- },
- "subscribe": {
-   "messages": []
- }
-}
-};
-
 function strip(s){
   return s.replace(/(^\s*)|(\s*$)/gi,'');
-}
-
-function populatePubSubs(){
 }
 
 function populatePubSubs(){
@@ -86,9 +68,10 @@ function setupsb(){
     console.log(e);
   }
   sb = new Spacebrew.Client(undefined, 
-                            undefined, 
+                            "custom " + Math.floor(Math.random() * 1000), 
                             undefined,
                             {debug: true});
+  window.document.title = sb._name;
   populatePubSubs();
   function handleOutput(output){
     if (output){
@@ -148,7 +131,7 @@ function getLink(){
   if (qsIndex >= 0){
     href = href.substring(0,qsIndex);
   }
-  return href + "?name=" + name + "&server=" + server + "&stringIns=" + escape(stringInputs) + "&stringOuts=" + escape(stringOutputs) + "&booleanIns=" + escape(booleanInputs) + "&booleanOuts=" + escape(booleanOutputs) + "&rangeIns=" + escape(rangeInputs) + "&rangeOuts=" + escape(rangeOutputs) + "&code=" + escape("onRange = " + onRange + ";onString = " + onString + ";onBoolean = " + onBoolean + ";init = " + init + ";");
+  return href + "?name=" + escape(sb._name) + "&server=" + escape(sb._server) + "&description=" + escape(sb._description) + "&stringIns=" + escape(stringInputs) + "&stringOuts=" + escape(stringOutputs) + "&booleanIns=" + escape(booleanInputs) + "&booleanOuts=" + escape(booleanOutputs) + "&rangeIns=" + escape(rangeInputs) + "&rangeOuts=" + escape(rangeOutputs) + "&code=" + escape("onRange = " + onRange + ";onString = " + onString + ";onBoolean = " + onBoolean + ";init = " + init + ";");
 };
 
 function sendMessage(publisher, value, type){

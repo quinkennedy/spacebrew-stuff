@@ -32,9 +32,10 @@ var address = unescape(gup('address'));//the address of the website you want to 
 var sb;
 var setup = function(){
   sb = new Spacebrew.Client(undefined,
-                            undefined,
+                            "hit-webpage " + Math.floor(Math.random() * 1000),
                             "This is a client which goes to some wepage when it receives a bang.",
                             {debug: true});
+  window.document.title = sb._name;
   sb.addSubscribe("Bang!", "boolean");
   sb.onBooleanMessage = function onBoolean(name, value){
     $.get(address);

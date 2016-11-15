@@ -23,9 +23,10 @@ function setup (){
 
 function setupSB(){
   sb = new Spacebrew.Client(undefined, 
-                                undefined, 
-                                "A simple and whimsical chat client", 
-                                {debug: true});
+                            "chat " + Math.floor(Math.random() * 1000), 
+                            "A simple and whimsical chat client", 
+                            {debug: true});
+  window.document.title = sb._name;
   sb.addPublish("send", "string", "hello");
   sb.addSubscribe("receive", "string");
   sb.onStringMessage = 
