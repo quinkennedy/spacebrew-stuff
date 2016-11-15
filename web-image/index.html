@@ -7,44 +7,9 @@
 		<!-- basic libraries -->
     <script type="text/javascript" src="../jslib/jq-1.7.min.js"></script>
     <script type="text/javascript" src="../jslib/sb-1.4.1.min.js"></script>
-<script type="text/javascript">
-$(document).ready( function() {
-	setup();
-});
-
-var sb;
-function setup(){
-  sb = new Spacebrew.Client(undefined,
-                            "image " + Math.floor(Math.random() * 1000),
-                            "A simple image viewer",
-                            {debug: true});
-  window.document.title = sb._name;
-  sb.addPublish("current image", 
-                "url", 
-                "http://thissongissick.com/blog/wp-content/uploads/2011/05/Hall-and-Oates-Dj-Kue-Remix.jpg");
-  sb.addSubscribe("image", "url");
-  sb.addSubscribe("cover", "boolean");
-
-  sb.onBooleanMessage = function onBoolean(name, value){
-    $("body").css("background-size", (value ? "cover" : "contain"));
-  };
-  sb.onCustomMessage = function onCustom(name, value, type){
-    $("body").css("background-image", "url("+value+")");
-    sb.send("current image", "url", value);
-  };
-
-  sb.onOpen = function onOpen(){
-    console.log("WebSockets connection opened");
-  };
-  sb.onClose = function onClose(){
-    console.log("WebSockets connection closed");
-  };
-  
-  sb.connect();
-};
-
-</script>
+    <script type="text/javascript" src="js/main.js"></script>
 	</head>
 	<body>
+    <h3 id="output">Not connected to Spacebrew :(</h3>
   </body>
 </html>
