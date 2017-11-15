@@ -1,14 +1,26 @@
 <!DOCTYPE HTML>
 <html>
 	<head>
-		<title>Spacebrew Image Viewer</title>
+		<title>Spacebrew Iframe Organizer</title>
 		<meta charset="utf-8">
+		<link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css" type="text/css" />
 		<link rel="stylesheet" href="css/style.css" type="text/css" media="screen" charset="utf-8" />
 		<!-- basic libraries -->
-    <script type="text/javascript" src="../jslib/jq-1.7.min.js"></script>
+		<script
+		  src="https://cdnjs.cloudflare.com/ajax/libs/handlebars.js/4.0.11/handlebars.js"
+			integrity="sha256-JWyJjSicZs/EX4AJmuCHSYYARSvIkYeM79Dn1pJOSCE="
+			crossorigin="anonymous"></script>
+		<script
+		  src="https://code.jquery.com/jquery-1.7.2.min.js"
+		  integrity="sha256-R7aNzoy2gFrVs+pNJ6+SokH04ppcEqJ0yFLkNGoFALQ="
+		  crossorigin="anonymous"></script>
+		<script
+			src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"
+			integrity="sha256-VazP97ZCwtekAsvgPBSUwPFKdrwD3unUfSGVYrahUqU="
+			crossorigin="anonymous"></script>
 <script type="text/javascript">
 $(document).ready( function() {
-	setup();
+	Setup();
 });
 
 function gup( name ) {
@@ -22,118 +34,153 @@ function gup( name ) {
     return results[1];
 }
 
+var username = 'User' + Math.floor(Math.random() * 1000);
+var indices = {};
+var frameData = [];
+
 //-------------------------------------------------------
 var ddl, txt, chk;
-function setup (){
+function Setup (){
+	$('#selURL').val('null');
+	ConnectEvents();
+	LoadFromURL();
+};
+
+function ConnectEvents(){
+	$('#selURL').change(URLSelected);
+	$('#btnLink').click(ShowLink);
+}
+
+function GetCurrServer(){
+  return $('#txtServer').val();
+}
+
+function URLSelected(){
+	var selected = $('#selURL option:selected').first();
+	var url = selected.attr("value");
+	if (url == 'null'){
+		//first choice, not a choice, ignore
+		return;
+	}
+	var name = selected.text();
+	var index = 1;
+	if (indices.hasOwnProperty(name)){
+		index = ++indices[name]
+	} else {
+		indices[name] = index;
+	}
+	name += ' ' + index;
+	url += '?server=' + GetCurrServer() + '&name=' + username + ' ' + name;
+	var info = CreateFrame(url, name);
+	//reset ddl
+	$('#selURL').val('null');
+}
+
+function CreateFrame(url, name, index){
+	var source = "<div class='frame' id='{{id}}'><text>{{name}}</text><iframe src='{{url}}'></iframe></div>";
+	var template = Handlebars.compile(source);
+	if (index == undefined){
+		index = frameData.length;
+	}
+	var context = {url, name, id:'frame'+index};
+	var html = $(template(context));
+	html.resizable().draggable();
+	$('body').append(html);
+	frameData.push(context);
+	return context;
+}
+
+function PositionFrame(id, x, y, width, height){
+	var frame = $('#'+id);
+	frame.position({
+		my:'left top',
+		at:'left+' + x + ' top+' + y,
+		of:'body'
+	});
+	frame.width(width);
+	frame.height(height);
+}
+
+function LoadFromURL(){
   var pages = gup('pages');
   if (pages){
+		var names = gup('names');
     var Xs = gup('x');
     var Ys = gup('y');
     var Hs = gup('h');
     var Ws = gup('w');
     pages = unescape(pages).split(';');
+		if (names){
+	  	names = unescape(names).split(';');
+	  }
     Xs = Xs.split(';');
     Ys = Ys.split(';');
     Ws = Ws.split(';');
     Hs = Hs.split(';');
-    
+
     for(var len = Math.min(pages.length, Xs.length, Ys.length)-1; len >= 0; len--){
-      var iframe = document.createElement("iframe");
-      iframe.src = pages[len];
-      iframe.style.left = Xs[len] + 'px';
-      iframe.style.top = Ys[len] + 'px';
-      iframe.style.width = Ws[len] + 'px';
-      iframe.style.height = Hs[len] + 'px';
-      document.body.appendChild(iframe);
+			var name = len;
+			if (names){
+				name = names[len];
+			}
+			var data = CreateFrame(pages[len], name);
+			PositionFrame(data.id, Xs[len], Ys[len], Ws[len], Hs[len]);
     }
   }
-};
+}
 
-function add(path){
-  var iframe = document.createElement("iframe");
-  iframe.src = path;
-  document.body.appendChild(iframe);
-  console.log("added iframe at index: " + (document.getElementsByTagName("iframe").length - 1));
-};
+function ShowLink(){
+	console.log(GetLink());
+}
 
-function getIndex(index){
-  var iframes = document.getElementsByTagName("iframe");
-  if (iframes.length <= index){
-    console.log("there are only " + iframes.length + " iframe(s)");
-    return undefined;
-  }
-  return iframes[index];
-};
-
-function updateX(index, int){
-  var iframe = getIndex(index);
-  if (!iframe){ return; }
-  iframe.style.left = int+'px';
-};
-
-function updateY(index, int){
-  var iframe = getIndex(index);
-  if (!iframe){ return; }
-  iframe.style.top = int+'px';
-};
-
-function updateW(index, int){
-  var iframe = getIndex(index);
-  if (!iframe){ return; }
-  iframe.style.width = int+'px';
-};
-
-function updateH(index, int){
-  var iframe = getIndex(index);
-  if (!iframe){ return; }
-  iframe.style.height = int+'px';
-};
-
-function getLink(){
+function GetLink(){
   var href = window.location.href;
   var qsIndex = href.indexOf("?");
   if (qsIndex >= 0){
     href = href.substring(0,qsIndex);
   }
-  var elems = document.getElementsByTagName("iframe");
   var pages = [];
+	var names = [];
   var Xs = [];
   var Ys = [];
   var Ws = [];
   var Hs = [];
-  var tmp;
-  for(var i = elems.length - 1; i >= 0; i--){
-    pages.push(elems[i].src);
-    tmp = elems[i].style.left;
-    if (tmp && tmp.length > 2){
-      Xs.push(tmp.substring(0, tmp.length - 2));
-    } else {
-      Xs.push(0);
-    }
-    tmp = elems[i].style.top;
-    if (tmp && tmp.length > 2){
-      Ys.push(tmp.substring(0, tmp.length - 2));
-    } else {
-      Ys.push(0);
-    }
-    tmp = elems[i].style.width;
-    if (tmp && tmp.length > 2){
-      Ws.push(tmp.substring(0, tmp.length - 2));
-    } else {
-      Ws.push(0);
-    }
-    tmp = elems[i].style.height;
-    if (tmp && tmp.length > 2){
-      Hs.push(tmp.substring(0, tmp.length - 2));
-    } else {
-      Hs.push(0);
-    }
-  }
-  return href + "?pages=" + escape(pages.join(';')) + "&x=" + Xs.join(';') + "&y=" + Ys.join(';') + "&w=" + Ws.join(';') + "&h=" + Hs.join(';');
+	for(var i = 0; i < frameData.length; i++){
+		var data = frameData[i];
+		pages.push(data.url);
+		names.push(data.name);
+		var elem = $('#'+data.id);
+		var pos = elem.position();
+		Xs.push(Math.round(pos.left));
+		Ys.push(Math.round(pos.top));
+		Ws.push(Math.round(elem.width()));
+		Hs.push(Math.round(elem.height()));
+	}
+  return href + "?pages=" + escape(pages.join(';')) + "&names=" + escape(names.join(';')) + "&x=" + Xs.join(';') + "&y=" + Ys.join(';') + "&w=" + Ws.join(';') + "&h=" + Hs.join(';');
 };
 
 </script>
 	</head>
 	<body>
+		<div id="buttons">
+		  <button id="btnEdit">Edit</button>
+			<button id="btnLink">Get Link</button>
+	  </div>
+		<div id="editPanel">
+		  <input type="text" id="txtServer" value="sandbox.spacebrew.cc"></input>
+		  <button id="btnUseSandbox">Use Sandbox</button>
+      <select id="selURL">
+				<option value="null">-- Add A Panel --</option>
+				<option value="http://spacebrew.github.io/spacebrew/admin/admin.html">Admin</option>
+				<option value="http://www.quinkennedy.com/spacebrew-stuff/web-button/index.html">Button</option>
+				<option value="http://www.quinkennedy.com/spacebrew-stuff/web-doorbell/index.html">Doorbell</option>
+				<option value="http://www.quinkennedy.com/spacebrew-stuff/web-chat/index.html">Chat</option>
+				<option value="http://www.quinkennedy.com/spacebrew-stuff/web-metro/index.html">Metronome</option>
+				<option value="http://www.quinkennedy.com/spacebrew-stuff/web-image/index.html">View Image</option>
+				<option value="http://www.quinkennedy.com/spacebrew-stuff/web-send-url/index.html">Send URL</option>
+				<option value="http://spacebrew.github.io/spacebrew.js/spacebrew_button/index.html">Example-Button</option>
+				<option value="http://labatrockwell.github.io/spacebrew-javascript-wildstyle-examples/spacebrew_graph/index.html">Example-Graph</option>
+			</select>
+		</div>
   </body>
 </html>
